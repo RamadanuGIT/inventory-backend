@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+
+    "rootDir": "./src",
+    "outDir": "./dist",
+
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+
+    "types": ["node"],       // ✅ penting untuk process, path, dll.
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+
+    // kalau frontend React juga:
+    "jsx": "react-jsx",
+    "isolatedModules": true
+  },
+  "include": ["src/**/*"]
+}
