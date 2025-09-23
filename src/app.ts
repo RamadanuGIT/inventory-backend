@@ -5,7 +5,12 @@ import { stockRouter } from "./routes/stockLog"; // import stockRouter
 
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: "*", // sementara untuk testing
+  })
+);
+
 app.use(express.json());
 
 // Routes
