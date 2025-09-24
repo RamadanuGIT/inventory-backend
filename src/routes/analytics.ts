@@ -13,7 +13,7 @@ router.get("/dashboard", async (_req, res) => {
     const lowStock = await prisma.item.count();
 
     const transactions = await prisma.$queryRaw`
-      SELECT DATE_TRUNC('month', "createdAt") AS month,
+      SELECT DATE_TRUNC('month', "tanggal") AS month,
              SUM(CASE WHEN type = 'IN'  THEN quantity ELSE 0 END) AS total_in,
              SUM(CASE WHEN type = 'OUT' THEN quantity ELSE 0 END) AS total_out
       FROM "StockLog"
