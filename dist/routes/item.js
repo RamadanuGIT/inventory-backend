@@ -7,6 +7,7 @@ const prisma = new client_1.PrismaClient();
 exports.itemRouter = (0, express_1.Router)();
 // GET semua item
 exports.itemRouter.get("/", async (_req, res) => {
+    console.log("GET /api/items hit");
     try {
         const items = await prisma.item.findMany();
         res.json({ items });

@@ -13,6 +13,7 @@ interface StockRequest {
 
 // GET semua item
 itemRouter.get("/", async (_req, res) => {
+  console.log("GET /api/items hit");
   try {
     const items = await prisma.item.findMany();
     res.json({ items });
