@@ -7,80 +7,78 @@ const router = Router();
 router.get("/dashboard", async (_req, res) => {
   try {
     const totalItems = await prisma.item.count();
-    const totalStock = await prisma.item.aggregate({
+    const totalStockAgg = await prisma.item.aggregate({
       _sum: { stockAwal: true },
     });
+    const totalStock = totalStockAgg._sum?.stockAwal || 0;
 
-    // Low Stock Items
+    // 1️⃣ Low Stock Items
     const lowStockItems = await prisma.item.findMany({
       where: { stockAwal: { lt: 10 } },
       select: { id: true, nama: true, stockAwal: true },
     });
 
-    // Transaksi 3 bulan terakhir per bulan
+    // 2️⃣ Transactions 3 bulan terakhir
     const rawTransactions = await prisma.$queryRaw<
       { month: Date; total_in: bigint | null; total_out: bigint | null }[]
     >`
       SELECT DATE_TRUNC('month', "tanggal") AS month,
-             SUM(CASE WHEN type = 'IN'  THEN jumlah ELSE 0 END)  AS total_in,
-             SUM(CASE WHEN type = 'OUT' THEN jumlah ELSE 0 END) AS total_out
+             SUM(CASE WHEN type='IN' THEN jumlah ELSE 0 END) AS total_in,
+             SUM(CASE WHEN type='OUT' THEN jumlah ELSE 0 END) AS total_out
       FROM "StockLog"
       WHERE "tanggal" >= (CURRENT_DATE - INTERVAL '3 months')
       GROUP BY 1
-      ORDER BY 1;
+      ORDER BY 1
     `;
-
     const transactions = rawTransactions.map((t) => ({
       month: t.month,
       total_in: Number(t.total_in ?? 0),
       total_out: Number(t.total_out ?? 0),
     }));
 
-    // Stagnant Items (tidak keluar selama 3 bulan)
+    // 3️⃣ Stagnant Items (tidak keluar sama sekali 3 bulan terakhir)
     const threeMonthsAgo = new Date();
     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
-    const stagnantItems = await prisma.item.findMany({
-      where: {
-        logs: {
-          none: {
-            type: "OUT",
-            tanggal: {
-              gte: threeMonthsAgo,
-            },
-          },
-        },
-      },
-      select: { id: true, nama: true },
-    });
+    const stagnantItems = await prisma.$queryRaw<
+      { id: number; nama: string; stockAwal: number }[]
+    >`
+      SELECT i.id, i.nama, i."stockAwal"
+      FROM "Item" i
+      LEFT JOIN (
+        SELECT "itemId", MAX("tanggal") as lastOut
+        FROM "StockLog"
+        WHERE type='OUT'
+        GROUP BY "itemId"
+      ) l ON i.id = l."itemId"
+      WHERE l.lastOut IS NULL OR l.lastOut < ${threeMonthsAgo};
+    `;
 
-    // Top Sales 1 bulan terakhir
-    const salesRanking = await prisma.$queryRaw<
+    // 4️⃣ Top Sales 1 bulan terakhir
+    const salesRankingRaw = await prisma.$queryRaw<
       { itemId: number; nama: string; total_out: bigint }[]
     >`
       SELECT "itemId", "nama", SUM(jumlah) AS total_out
       FROM "StockLog"
-      WHERE type = 'OUT'
-        AND "tanggal" >= (CURRENT_DATE - INTERVAL '1 month')
+      WHERE type='OUT' AND "tanggal" >= (CURRENT_DATE - INTERVAL '1 month')
       GROUP BY "itemId", "nama"
       ORDER BY total_out DESC
-      LIMIT 10;
+      LIMIT 10
     `;
-
-    const salesRankingSafe = salesRanking.map((s) => ({
+    const salesRanking = salesRankingRaw.map((s) => ({
       ...s,
       total_out: Number(s.total_out),
     }));
 
     res.json({
       totalItems,
-      totalStock: totalStock._sum?.stockAwal || 0,
-      lowStock: lowStockItems.length,
+      totalStock,
       lowStockItems,
-      stagnantItemsCount: stagnantItems.length,
+      lowStock: lowStockItems.length,
       stagnantItems,
+      stagnantItemsCount: stagnantItems.length,
       transactions,
-      salesRanking: salesRankingSafe,
+      salesRanking,
     });
   } catch (err) {
     console.error("Dashboard error:", err);
