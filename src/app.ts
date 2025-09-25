@@ -3,6 +3,7 @@ import cors from "cors";
 import { itemRouter } from "./routes/item"; //Import itemRouter
 import { stockRouter } from "./routes/stockLog"; // import stockRouter
 import analyticsRouter from "./routes/analytics"; //import analitycRouter
+import { stockOutRouter } from "./routes/stock";
 
 const app = express();
 
@@ -14,6 +15,7 @@ app.use(express.json());
 app.use("/api/items", itemRouter); //api/items
 app.use("/api", stockRouter); // /api/stock-logs & /api/stock
 app.use("/api/analytics", analyticsRouter); //api/analitycs
+app.use("/api", stockOutRouter);
 
 // Start server
 

@@ -2,14 +2,13 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.itemRouter = void 0;
 const express_1 = require("express");
-const client_1 = require("@prisma/client");
-const prisma = new client_1.PrismaClient();
+const prisma_1 = require("../prisma");
 exports.itemRouter = (0, express_1.Router)();
 // GET semua item
 exports.itemRouter.get("/", async (_req, res) => {
     console.log("GET /api/items hit");
     try {
-        const items = await prisma.item.findMany();
+        const items = await prisma_1.prisma.item.findMany();
         res.json({ items });
     }
     catch (err) {
@@ -22,7 +21,7 @@ exports.itemRouter.post("/", async (req, res) => {
     console.log("REQ BODY:", req.body);
     try {
         const { kode, nama, satuan, stockAwal } = req.body;
-        const newItem = await prisma.item.create({
+        const newItem = await prisma_1.prisma.item.create({
             data: {
                 kode,
                 nama,
@@ -43,7 +42,7 @@ exports.itemRouter.put("/:id", async (req, res) => {
         const id = Number(req.params.id);
         if (isNaN(id))
             return res.status(400).json({ error: "ID harus angka" });
-        const update = await prisma.item.update({
+        const update = await prisma_1.prisma.item.update({
             where: { id },
             data: {
                 ...req.body,
@@ -63,7 +62,7 @@ exports.itemRouter.delete("/:id", async (req, res) => {
         const id = Number(req.params.id);
         if (isNaN(id))
             return res.status(400).json({ error: "ID harus angka" });
-        await prisma.item.delete({ where: { id } });
+        await prisma_1.prisma.item.delete({ where: { id } });
         res.json({ message: "Delete berhasil" });
     }
     catch (err) {
@@ -83,16 +82,16 @@ exports.itemRouter.post("/stock", async (req, res) => {
             return res
                 .status(400)
                 .json({ error: "Tipe harus 'masuk' atau 'keluar'" });
-        const item = await prisma.item.findUnique({ where: { id: itemId } });
+        const item = await prisma_1.prisma.item.findUnique({ where: { id: itemId } });
         if (!item)
             return res.status(404).json({ error: "Item tidak ditemukan" });
         // Buat stock log
-        const log = await prisma.stockLog.create({
+        const log = await prisma_1.prisma.stockLog.create({
             data: { itemId, type, jumlah },
         });
         // Update total stock
         const newStock = type === "masuk" ? item.stockAwal + jumlah : item.stockAwal - jumlah;
-        await prisma.item.update({
+        await prisma_1.prisma.item.update({
             where: { id: itemId },
             data: { stockAwal: newStock },
         });
