@@ -19,6 +19,7 @@ model Item {
   nama      String
   satuan    String
   stockAwal Int
+  price     Decimal?   @db.Decimal(10, 2)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   logs      StockLog[]
@@ -32,5 +33,5 @@ model StockLog {
   type    String
   jumlah  Int
   tanggal DateTime @default(now())
-  item    Item     @relation(fields: [itemId], references: [id])
+  item    Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
 }

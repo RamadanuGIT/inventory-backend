@@ -20,13 +20,14 @@ exports.itemRouter.get("/", async (_req, res) => {
 exports.itemRouter.post("/", async (req, res) => {
     console.log("REQ BODY:", req.body);
     try {
-        const { kode, nama, satuan, stockAwal } = req.body;
+        const { kode, nama, satuan, stockAwal, price } = req.body;
         const newItem = await prisma_1.prisma.item.create({
             data: {
                 kode,
                 nama,
                 satuan,
                 stockAwal: Number(stockAwal),
+                price: Number(price),
             },
         });
         res.json(newItem);
