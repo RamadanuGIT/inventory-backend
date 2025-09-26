@@ -9,20 +9,38 @@ exports.stockRouter = (0, express_1.Router)();
 // stockRouter.ts
 exports.stockRouter.get("/stock-logs", async (req, res) => {
     try {
-        const { sort = "tanggal", order = "desc", type, startDate, endDate, limit = "50", page = "1", kode, nama, } = req.query;
+        const { search, sort = "tanggal", order = "desc", type, startDate, endDate, limit = "50", page = "1", kode, nama, } = req.query;
         const where = {};
+        // filter tipe transaksi
         if (type)
             where.type = type;
-        if (kode)
-            where.item = { kode: { contains: String(kode), mode: "insensitive" } };
-        if (nama)
-            where.item = { nama: { contains: String(nama), mode: "insensitive" } };
+        // filter tanggal
         if (startDate || endDate) {
             where.tanggal = {};
             if (startDate)
                 where.tanggal.gte = new Date(String(startDate));
             if (endDate)
                 where.tanggal.lte = new Date(String(endDate));
+        }
+        // filter berdasarkan relasi item
+        const itemFilters = [];
+        if (kode)
+            itemFilters.push({
+                kode: { contains: String(kode), mode: "insensitive" },
+            });
+        if (nama)
+            itemFilters.push({
+                nama: { contains: String(nama), mode: "insensitive" },
+            });
+        if (search)
+            itemFilters.push({
+                OR: [
+                    { kode: { contains: String(search), mode: "insensitive" } },
+                    { nama: { contains: String(search), mode: "insensitive" } },
+                ],
+            });
+        if (itemFilters.length > 0) {
+            where.item = { AND: itemFilters };
         }
         const take = parseInt(limit, 10);
         const skip = (parseInt(page, 10) - 1) * take;
