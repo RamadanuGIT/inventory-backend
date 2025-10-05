@@ -70,11 +70,11 @@ exports.stockRouter.post("/stock", async (req, res) => {
             return res.status(404).json({ error: "Item tidak ditemukan" });
         // Update total stock
         const newStock = type === "masuk"
-            ? item.stockAwal + Number(jumlah)
-            : item.stockAwal - Number(jumlah);
+            ? item.quantity + Number(jumlah)
+            : item.quantity - Number(jumlah);
         await prisma.item.update({
             where: { id: Number(itemId) },
-            data: { stockAwal: newStock },
+            data: { quantity: newStock },
         });
         // Buat stock log
         const log = await prisma.stockLog.create({

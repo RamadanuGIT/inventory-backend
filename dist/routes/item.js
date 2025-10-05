@@ -3,12 +3,49 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.itemRouter = void 0;
 const express_1 = require("express");
 const prisma_1 = require("../prisma");
+const client_1 = require("@prisma/client");
 exports.itemRouter = (0, express_1.Router)();
+exports.itemRouter.get("/search", async (req, res) => {
+    try {
+        const q = req.query.q?.toString().trim();
+        if (!q) {
+            return res.status(400).json({ message: "Query pencarian kosong" });
+        }
+        const items = await prisma_1.prisma.item.findMany({
+            where: {
+                OR: [
+                    {
+                        kode: {
+                            contains: q,
+                            mode: client_1.Prisma.QueryMode.insensitive,
+                        },
+                    },
+                    {
+                        nama: {
+                            contains: q,
+                            mode: client_1.Prisma.QueryMode.insensitive,
+                        },
+                    },
+                ],
+            },
+            take: 10,
+            orderBy: { nama: "asc" },
+        });
+        res.json({ items });
+    }
+    catch (err) {
+        console.error("❌ Error /search:", err);
+        res.status(500).json({ message: "Terjadi kesalahan server" });
+    }
+});
 // GET semua item
 exports.itemRouter.get("/", async (_req, res) => {
-    console.log("GET /api/items hit");
     try {
-        const items = await prisma_1.prisma.item.findMany();
+        const items = await prisma_1.prisma.item.findMany({
+            orderBy: {
+                nama: "asc", // atau bisa 'kode' kalau kamu mau urut berdasarkan Part Number
+            },
+        });
         res.json({ items });
     }
     catch (err) {
@@ -18,16 +55,17 @@ exports.itemRouter.get("/", async (_req, res) => {
 });
 // Tambah item
 exports.itemRouter.post("/", async (req, res) => {
-    console.log("REQ BODY:", req.body);
     try {
-        const { kode, nama, satuan, stockAwal, price } = req.body;
+        const { kode, nama, quantity, description, information, price, priceUSD } = req.body;
         const newItem = await prisma_1.prisma.item.create({
             data: {
                 kode,
                 nama,
-                satuan,
-                stockAwal: Number(stockAwal),
-                price: Number(price),
+                quantity: Number(quantity),
+                price: price ? new client_1.Prisma.Decimal(price) : null,
+                priceUSD: priceUSD ? new client_1.Prisma.Decimal(priceUSD) : null,
+                description,
+                information,
             },
         });
         res.json(newItem);
@@ -43,12 +81,25 @@ exports.itemRouter.put("/:id", async (req, res) => {
         const id = Number(req.params.id);
         if (isNaN(id))
             return res.status(400).json({ error: "ID harus angka" });
+        const { kode, nama, quantity, description, information, price, priceUSD } = req.body;
+        const data = {}; // Prisma update input
+        if (kode !== undefined)
+            data.kode = kode;
+        if (nama !== undefined)
+            data.nama = nama;
+        if (quantity !== undefined)
+            data.quantity = Number(quantity);
+        if (description !== undefined)
+            data.description = description;
+        if (information !== undefined)
+            data.information = information;
+        if (price !== undefined)
+            data.price = Number(price);
+        if (priceUSD !== undefined)
+            data.priceUSD = Number(priceUSD);
         const update = await prisma_1.prisma.item.update({
             where: { id },
-            data: {
-                ...req.body,
-                stockAwal: req.body.stockAwal ? Number(req.body.stockAwal) : undefined,
-            },
+            data,
         });
         res.json(update);
     }
@@ -91,10 +142,10 @@ exports.itemRouter.post("/stock", async (req, res) => {
             data: { itemId, type, jumlah },
         });
         // Update total stock
-        const newStock = type === "masuk" ? item.stockAwal + jumlah : item.stockAwal - jumlah;
+        const newStock = type === "masuk" ? item.quantity + jumlah : item.quantity - jumlah;
         await prisma_1.prisma.item.update({
             where: { id: itemId },
-            data: { stockAwal: newStock },
+            data: { quantity: newStock },
         });
         res.json({ log, newStock });
     }

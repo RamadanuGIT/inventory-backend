@@ -10,12 +10,12 @@ router.get("/dashboard", async (req, res) => {
         // Total items & stock
         const totalItems = await prisma.item.count();
         const totalStock = await prisma.item.aggregate({
-            _sum: { stockAwal: true },
+            _sum: { quantity: true },
         });
         // Low Stock Items
         const lowStockItems = await prisma.item.findMany({
-            where: { stockAwal: { lt: 10 } },
-            select: { id: true, nama: true, stockAwal: true },
+            where: { quantity: { lt: 10 } },
+            select: { id: true, nama: true, quantity: true },
         });
         // Stagnant Items (tidak keluar selama 3 bulan)
         const threeMonthsAgo = new Date();
@@ -29,7 +29,7 @@ router.get("/dashboard", async (req, res) => {
                     },
                 },
             },
-            select: { id: true, nama: true, stockAwal: true },
+            select: { id: true, nama: true, quantity: true },
         });
         // Date range transaksi 12 bulan (default)
         let start = startDate ? new Date(startDate) : new Date();
@@ -69,7 +69,7 @@ router.get("/dashboard", async (req, res) => {
         }));
         res.json({
             totalItems,
-            totalStock: totalStock._sum?.stockAwal || 0,
+            totalStock: totalStock._sum?.quantity || 0,
             lowStock: lowStockItems.length,
             lowStockItems,
             stagnantItemsCount: stagnantItems.length,

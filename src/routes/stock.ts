@@ -3,6 +3,7 @@ import { prisma } from "../prisma";
 
 export const stockOutRouter = express.Router();
 // Batch keluar stok
+
 stockOutRouter.post("/stock/out/batch", async (req, res) => {
   try {
     const { items } = req.body; // [{ itemId, jumlah }, ...]
@@ -23,7 +24,7 @@ stockOutRouter.post("/stock/out/batch", async (req, res) => {
           .status(404)
           .json({ message: `Item dengan id ${itemId} tidak ditemukan` });
 
-      if (item.stockAwal < jumlah)
+      if (item.quantity < jumlah)
         return res
           .status(400)
           .json({ message: `Stok tidak cukup untuk item ${item.nama}` });
@@ -31,7 +32,7 @@ stockOutRouter.post("/stock/out/batch", async (req, res) => {
       // Kurangi stockAwal
       const updatedItem = await prisma.item.update({
         where: { id: itemId },
-        data: { stockAwal: item.stockAwal - jumlah },
+        data: { quantity: item.quantity - jumlah },
       });
 
       // Tambah log keluar

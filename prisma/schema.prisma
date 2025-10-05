@@ -14,15 +14,17 @@ datasource db {
 }
 
 model Item {
-  id        Int        @id @default(autoincrement())
-  kode      String     @unique
-  nama      String
-  satuan    String
-  stockAwal Int
-  price     Decimal?   @db.Decimal(10, 2)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  logs      StockLog[]
+  id          Int        @id @default(autoincrement())
+  kode        String
+  nama        String
+  quantity    Int        @default(0)
+  price       Decimal?   @db.Decimal(10, 2)
+  priceUSD    Decimal?   @db.Decimal(10, 2)
+  description String?
+  information String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  logs        StockLog[]
 }
 
 model StockLog {
